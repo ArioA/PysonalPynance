@@ -1,67 +1,13 @@
-import enum
 import os
-import re
 
 from os import path
-from typing import Optional, Tuple, List
+from typing import List
 
 import pandas
 
 from pynance import STATEMENTS_DIR
-
-
-def parse_price(price_str: Optional[str]) -> float:
-    if not price_str:
-        price_num = 0.0
-    else:
-        price_num = float(price_str[1:])
-
-    return price_num
-
-
-PARSER_FUNCTIONS = {"Paid in": parse_price, "Paid out": parse_price}
-
-
-class TransactionRegex(enum.Enum):
-    GOOGLE_PAY_REGEX = re.compile(r"  Google \*{4}\d{4}")
-    CONTACTLESS_REGEX = re.compile(r"  Contactless")
-    FX_REGEX = re.compile(r"  \d+[.]\d+.* at \d+[.]\d+")
-
-
-def match_transaction_metadata(transaction: str) -> Optional[re.Match]:
-    match = None
-
-    for regex in TransactionRegex:
-        match = regex.value.search(transaction)
-        if match is not None:
-            return match
-    return match
-
-
-def split_transaction(transaction: str) -> Tuple[str, str]:
-    match = match_transaction_metadata(transaction)
-
-    if match is None:
-        counterparty = transaction
-        payment_type = "Card Payment"
-    else:
-        counterparty = transaction[: match.start()]
-        payment_type = match.group().strip()
-
-    return counterparty, payment_type
-
-
-def create_transaction_metadata_column(df: pandas.DataFrame):
-    new_transactions = []
-    payment_types = []
-
-    for transaction in df["Transactions"]:
-        new_transaction, payment_type = split_transaction(transaction)
-        new_transactions.append(new_transaction)
-        payment_types.append(payment_type)
-
-    df["Transactions"] = new_transactions
-    df["PaymentType"] = payment_types
+from pynance.parsing import PARSER_FUNCTIONS
+from pynance.transformations import create_transaction_metadata_column, sort_by_key
 
 
 def statement_file(file_name: str) -> str:
@@ -81,7 +27,7 @@ def get_all_nationwide_statements() -> pandas.DataFrame:
 
 def get_all_nationwide_statements_by_date(split_transaction_type=True) -> pandas.DataFrame:
     statements = get_all_nationwide_statements()
-    sorted_statements = statements.sort_values("Date").reset_index(drop=True)
+    sorted_statements = sort_by_key(statements, "Date")
 
     if split_transaction_type:
         create_transaction_metadata_column(sorted_statements)

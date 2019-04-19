@@ -1,6 +1,6 @@
 import pytest
 
-from pynance import io
+from pynance import parsing
 
 
 @pytest.mark.parametrize("input, expected_counterparty, expected_metadata", [
@@ -10,7 +10,7 @@ from pynance import io
     ("YUKKA GARDEN", "YUKKA GARDEN", "Card Payment")
 ])
 def test_regex_match(input, expected_counterparty, expected_metadata):
-    counterparty, metadata = io.split_transaction(input)
+    counterparty, metadata = parsing.split_transaction(input)
 
     assert counterparty == expected_counterparty
     assert metadata == expected_metadata
