@@ -74,10 +74,19 @@ def read_all_nationwide_statements() -> List[pandas.DataFrame]:
     return [read_nationwide_statement(filename) for filename in statement_files]
 
 
-def get_all_nationwide_statements():
+def get_all_nationwide_statements() -> pandas.DataFrame:
     statements = read_all_nationwide_statements()
+    return pandas.concat(statements, ignore_index=True)
 
-    pandas.concat(statements, ignore_index=True, sort=)
+
+def get_all_nationwide_statements_by_date(split_transaction_type=True) -> pandas.DataFrame:
+    statements = get_all_nationwide_statements()
+    sorted_statements = statements.sort_values("Date").reset_index(drop=True)
+
+    if split_transaction_type:
+        create_transaction_metadata_column(sorted_statements)
+
+    return sorted_statements
 
 
 def read_nationwide_statement(
